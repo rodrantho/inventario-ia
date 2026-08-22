@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Crear cuenta · Inventario IA{% endblock %}
+{% block page_class %}auth-page{% endblock %}
+{% block content %}
+<section class="auth-shell single">
+  <div class="auth-card card">
+    <div class="card-heading">
+      <span class="eyebrow">Empezá ahora</span>
+      <h2>Crear una cuenta</h2>
+      <p>Tus avances quedarán guardados para volver cuando quieras.</p>
+    </div>
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/register" class="stack-form">
+      <label>Nombre
+        <input type="text" name="display_name" autocomplete="name" required maxlength="80" placeholder="Tu nombre">
+      </label>
+      <label>Correo electrónico
+        <input type="email" name="email" value="{{ email or '' }}" autocomplete="email" required placeholder="nombre@correo.com">
+      </label>
+      <label>Contraseña
+        <input type="password" name="password" autocomplete="new-password" required minlength="10" placeholder="Mínimo 10 caracteres">
+      </label>
+      <label>Repetir contraseña
+        <input type="password" name="password_confirm" autocomplete="new-password" required minlength="10" placeholder="Repetí la contraseña">
+      </label>
+      <button class="btn btn-primary btn-wide" type="submit">Crear cuenta</button>
+    </form>
+    <p class="auth-switch">¿Ya tenés cuenta? <a href="/login">Ingresar</a></p>
+  </div>
+</section>
+{% endblock %}

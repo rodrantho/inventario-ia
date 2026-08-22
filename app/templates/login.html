@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Ingresar · Inventario IA{% endblock %}
+{% block page_class %}auth-page{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-copy">
+    <span class="eyebrow">Inventariá sin perder tiempo</span>
+    <h1>Convertí un recorrido en una lista organizada.</h1>
+    <p>Subí videos por habitación, revisá los objetos encontrados y descargá tu inventario.</p>
+    <div class="feature-row"><span>✓</span> Acceso desde celular y computadora</div>
+    <div class="feature-row"><span>✓</span> Progreso guardado automáticamente</div>
+    <div class="feature-row"><span>✓</span> Exportación a Excel, PDF y CSV</div>
+  </div>
+  <div class="auth-card card">
+    <div class="card-heading">
+      <h2>Bienvenido</h2>
+      <p>Ingresá para continuar con tus inventarios.</p>
+    </div>
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/login" class="stack-form">
+      <label>Correo electrónico
+        <input type="email" name="email" value="{{ email or '' }}" autocomplete="email" required autofocus placeholder="nombre@correo.com">
+      </label>
+      <label>Contraseña
+        <input type="password" name="password" autocomplete="current-password" required placeholder="Tu contraseña">
+      </label>
+      <button class="btn btn-primary btn-wide" type="submit">Ingresar</button>
+    </form>
+    {% if allow_registration %}<p class="auth-switch">¿Primera vez? <a href="/register">Crear una cuenta</a></p>{% endif %}
+  </div>
+</section>
+{% endblock %}

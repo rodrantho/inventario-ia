@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ inventory.name }} · Inventario IA{% endblock %}
+{% block content %}
+<a class="back-link" href="/app">← Volver a mis inventarios</a>
+<section class="detail-head">
+  <div>
+    <span class="eyebrow">{{ countries.get(inventory.country, inventory.country) }} · {{ inventory.currency }}</span>
+    <h1>{{ inventory.name }}</h1>
+    <p id="status-message">{{ inventory.status_message }}</p>
+  </div>
+  <div class="detail-actions">
+    <button class="btn btn-primary" data-open-dialog="upload-video">+ Subir video</button>
+    <div class="export-menu">
+      <button class="btn btn-secondary" data-toggle-menu>Descargar ▾</button>
+      <div class="menu">
+        <a href="/inventories/{{ inventory.id }}/export.xlsx">Excel (.xlsx)</a>
+        <a href="/inventories/{{ inventory.id }}/export.pdf">PDF</a>
+        <a href="/inventories/{{ inventory.id }}/export.csv">CSV</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if inventory.status in ('queued','processing') %}
+<section class="processing-card card" data-status-url="/api/inventories/{{ inventory.id }}/status">
+  <div class="processing-copy"><span class="spinner"></span><div><b>Estamos analizando tus videos</b><p>Podés cerrar esta página. El progreso queda guardado.</p></div><strong id="progress-label">{{ inventory.progress }}%</strong></div>
+  <div class="progress"><span id="progress-bar" style="width:{{ inventory.progress }}%"></span></div>
+</section>
+{% endif %}
+
+<section class="stats-row">
+  <div class="stat card"><span>Objetos</span><b>{{ totals.rows }}</b></div>
+  <div class="stat card"><span>Valor cargado</span><b>{{ inventory.currency }} {{ '%.2f'|format(totals.total) }}</b></div>
+  <div class="stat card"><span>Videos</span><b>{{ videos|length }}</b></div>
+</section>
+
+<section class="section-block">
+  <div class="section-heading"><div><span class="eyebrow">Recorridos</span><h2>Videos cargados</h2></div></div>
+  <div class="video-list">
+  {% for video in videos %}
+    <div class="video-row card">
+      <div class="video-icon">▶</div>
+      <div><b>{{ video.room_name }}</b><p>{{ video.original_name }} · {{ '%.1f'|format(video.size_bytes / 1048576) }} MB</p>{% if video.error %}<small class="text-error">{{ video.error }}</small>{% endif %}</div>
+      <span class="status-pill status-{{ video.status }}">{% if video.status == 'complete' %}Analizado{% elif video.status == 'processing' %}Procesando{% elif video.status == 'error' %}Error{% else %}En cola{% endif %}</span>
+    </div>
+  {% else %}
+    <div class="inline-empty card"><div>🎥</div><p>Todavía no cargaste videos.</p><button class="btn btn-primary btn-small" data-open-dialog="upload-video">Subir el primero</button></div>
+  {% endfor %}
+  </div>
+</section>
+
+<section class="section-block" id="items">
+  <div class="section-heading"><div><span class="eyebrow">Revisión</span><h2>Objetos encontrados</h2></div><button class="btn btn-secondary btn-small" data-open-dialog="add-item">+ Agregar objeto</button></div>
+  {% if items %}
+  <div class="items-wrap card">
+    <div class="items-head"><span>Objeto</span><span>Cantidad</span><span>Precio</span><span></span></div>
+    {% for item in items %}
+    <details class="item-row">
+      <summary>
+        <div class="item-title"><b>{{ item.name }}</b><span>{{ item.room_name }} {% if item.created_by == 'ai' %}· IA {{ (item.confidence * 100)|round|int if item.confidence else '' }}%{% endif %}</span></div>
+        <span class="quantity">× {{ item.quantity }}</span>
+        <span class="price">{% set p = item.final_price if item.final_price is not none else item.suggested_price %}{% if p is not none %}<b>{{ item.currency }} {{ '%.2f'|format(p) }}</b>{% if item.final_price is none and item.price_min is not none and item.price_max is not none %}<small>{{ '%.2f'|format(item.price_min) }}–{{ '%.2f'|format(item.price_max) }}</small>{% endif %}{% else %}<em>Sin comparables</em>{% endif %}</span>
+        <span class="chevron">⌄</span>
+      </summary>
+      <div class="item-editor">
+        <form method="post" action="/items/{{ item.id }}/update" class="stack-form compact-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <div class="form-grid thirds">
+            <label>Objeto<input name="name" value="{{ item.name }}" required maxlength="120"></label>
+            <label>Habitación<input name="room_name" value="{{ item.room_name }}" required maxlength="80"></label>
+            <label>Cantidad<input type="number" name="quantity" value="{{ item.quantity }}" required min="1" max="10000"></label>
+          </div>
+          <div class="form-grid">
+            <label>Precio unitario ({{ item.currency }})<input inputmode="decimal" name="final_price" value="{{ item.final_price if item.final_price is not none else '' }}" placeholder="0.00"></label>
+            <label>Descripción<input name="description" value="{{ item.description }}" maxlength="500" placeholder="Marca, material, estado..."></label>
+          </div>
+          {% if item.source_url %}<p class="source-note"><a href="{{ item.source_url }}" target="_blank" rel="noopener">Buscar comparables ↗</a> · {{ item.source_note }}</p>{% endif %}
+          <div class="editor-actions"><button class="btn btn-primary btn-small" type="submit">Guardar cambios</button></div>
+        </form>
+        <form method="post" action="/items/{{ item.id }}/delete" onsubmit="return confirm('¿Eliminar este objeto?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn btn-danger btn-small" type="submit">Eliminar</button>
+        </form>
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state card small-empty"><div class="empty-icon">□</div><h3>No hay objetos para revisar</h3><p>Subí un video o agregá el primer objeto manualmente.</p><button class="btn btn-secondary" data-open-dialog="add-item">Agregar objeto</button></div>
+  {% endif %}
+</section>
+
+<dialog id="upload-video" class="modal">
+  <form method="post" action="/inventories/{{ inventory.id }}/videos" enctype="multipart/form-data" class="stack-form upload-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="modal-head"><div><span class="eyebrow">Nuevo recorrido</span><h2>Subir video</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+    <label>Nombre de la habitación<input name="room_name" required maxlength="80" placeholder="Ej.: Living, dormitorio principal o casa completa"></label>
+    <label class="drop-zone">
+      <input type="file" name="video" accept="video/mp4,video/quicktime,video/webm,video/x-matroska" capture="environment" required>
+      <span class="drop-icon">↑</span><b>Elegí o grabá un video</b><small>MP4, MOV, WebM o MKV · máximo 1 GB</small><span class="selected-file"></span>
+    </label>
+    <div class="recording-tips"><b>Para obtener mejores resultados:</b><ul><li>Movete lentamente y con buena luz.</li><li>Mostrá cada objeto completo.</li><li>Grabá una habitación por video.</li></ul></div>
+    <div class="upload-progress" hidden><div class="progress"><span></span></div><small>Subiendo… <b>0%</b></small></div>
+    <button class="btn btn-primary btn-wide" type="submit">Subir y analizar</button>
+  </form>
+</dialog>
+
+<dialog id="add-item" class="modal">
+  <form method="post" action="/inventories/{{ inventory.id }}/items" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="modal-head"><div><span class="eyebrow">Carga manual</span><h2>Agregar objeto</h2></div><button type="button" class="icon-button" data-close-dialog>×</button></div>
+    <div class="form-grid"><label>Objeto<input name="name" required maxlength="120" placeholder="Ej.: Mesa de madera"></label><label>Habitación<input name="room_name" required maxlength="80" placeholder="Ej.: Comedor"></label></div>
+    <div class="form-grid"><label>Cantidad<input type="number" name="quantity" value="1" min="1" max="10000" required></label><label>Precio unitario ({{ inventory.currency }})<input inputmode="decimal" name="final_price" placeholder="Opcional"></label></div>
+    <label>Descripción<input name="description" maxlength="500" placeholder="Marca, material, estado..."></label>
+    <button class="btn btn-primary btn-wide" type="submit">Agregar al inventario</button>
+  </form>
+</dialog>
+{% endblock %}

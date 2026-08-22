@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Mis inventarios · Inventario IA{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <div>
+    <span class="eyebrow">Panel personal</span>
+    <h1>Mis inventarios</h1>
+    <p>Creá una propiedad, cargá sus videos y retomá el trabajo desde cualquier dispositivo.</p>
+  </div>
+  <button class="btn btn-primary" data-open-dialog="new-inventory">+ Nuevo inventario</button>
+</section>
+
+{% if not model_available %}
+<div class="alert alert-warning"><b>Análisis visual pendiente:</b> la aplicación funciona, pero el modelo local aún no está instalado.</div>
+{% endif %}
+
+<section class="inventory-grid">
+{% for inv in inventories %}
+  <a class="inventory-card card" href="/inventories/{{ inv.id }}">
+    <div class="inventory-icon">⌂</div>
+    <div class="inventory-main">
+      <h3>{{ inv.name }}</h3>
+      <p>{{ countries.get(inv.country, inv.country) }} · {{ inv.currency }}</p>
+      <div class="meta-row"><span>{{ inv.video_count }} video{% if inv.video_count != 1 %}s{% endif %}</span><span>{{ inv.item_count }} objeto{% if inv.item_count != 1 %}s{% endif %}</span></div>
+      {% if inv.status in ('queued','processing') %}
+      <div class="progress small"><span style="width:{{ inv.progress }}%"></span></div>
+      <small>{{ inv.status_message }}</small>
+      {% else %}
+      <span class="status-pill status-{{ inv.status }}">{{ inv.status_message }}</span>
+      {% endif %}
+    </div>
+    <span class="arrow">›</span>
+  </a>
+{% else %}
+  <div class="empty-state card">
+    <div class="empty-icon">⌂</div>
+    <h2>Tu primer inventario empieza acá</h2>
+    <p>Creá una propiedad y luego subí un video por cada habitación.</p>
+    <button class="btn btn-primary" data-open-dialog="new-inventory">Crear inventario</button>
+  </div>
+{% endfor %}
+</section>
+
+<dialog id="new-inventory" class="modal">
+  <form method="post" action="/inventories" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="modal-head"><div><span class="eyebrow">Paso 1</span><h2>Nueva propiedad</h2></div><button type="button" class="icon-button" data-close-dialog aria-label="Cerrar">×</button></div>
+    <label>Nombre del inventario
+      <input name="name" required maxlength="120" placeholder="Ej.: Departamento de Berlín" autofocus>
+    </label>
+    <div class="form-grid">
+      <label>País
+        <select name="country" required>{% for code, label in countries.items() %}<option value="{{ code }}" {% if code == 'AR' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+      </label>
+      <label>Moneda
+        <select name="currency" required>{% for currency in currencies %}<option value="{{ currency }}" {% if currency == 'USD' %}selected{% endif %}>{{ currency }}</option>{% endfor %}</select>
+      </label>
+    </div>
+    <button class="btn btn-primary btn-wide" type="submit">Crear y cargar videos</button>
+  </form>
+</dialog>
+{% endblock %}

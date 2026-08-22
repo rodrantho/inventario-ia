@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#172554">
+  <title>{% block title %}Inventario IA{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/app" aria-label="Inicio">
+      <span class="brand-mark">I</span>
+      <span>Inventario <b>IA</b></span>
+    </a>
+    {% if session %}
+    <nav class="top-actions">
+      <span class="user-name">{{ session.display_name }}</span>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <button class="btn btn-ghost btn-small" type="submit">Salir</button>
+      </form>
+    </nav>
+    {% endif %}
+  </header>
+  <main class="page {% block page_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">Inventario asistido por IA · Revisá los resultados antes de utilizarlos</footer>
+</body>
+</html>

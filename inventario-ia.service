@@ -1,0 +1,18 @@
+[Unit]
+Description=Inventario IA web application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/nstgroup/workspace/inventario-ia
+Environment=PYTHONUNBUFFERED=1
+Environment=INVENTARIO_COOKIE_SECURE=true
+Environment=INVENTARIO_ALLOW_REGISTRATION=true
+Environment=INVENTARIO_MAX_UPLOAD_MB=1024
+ExecStart=/home/nstgroup/workspace/inventario-ia/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8810 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
